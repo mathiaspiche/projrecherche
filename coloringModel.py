@@ -9,11 +9,11 @@ import readDZN
 import time
 
 
-modelpath = "C://Users//mathi//OneDrive//Documents//articlesIFT7020//projetRechercheIFT7020MiniZinc//solver.mzn"
+#modelpath = 
 
-gnn_path = r"C:\Users\mathi\OneDrive\Documents\articlesIFT7020\projetRechercheIFT7020MiniZinc\modeles\modele_entraine_GNN.pt"
+#gnn_path = 
 
-training_folder = r"C:\Users\mathi\OneDrive\Documents\articlesIFT7020\projetRechercheIFT7020MiniZinc\fichiers_benchs_20color"
+#training_folder =
 
 nb_colors = 50
 
