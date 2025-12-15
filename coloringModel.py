@@ -9,11 +9,11 @@ import readDZN
 import time
 
 
-modelpath = "C://Users//mathi//OneDrive//Documents//articlesIFT7020//projetRechercheIFT7020MiniZinc//solver.mzn"
+#modelpath = 
 
-gnn_path = r"C:\Users\mathi\OneDrive\Documents\articlesIFT7020\projetRechercheIFT7020MiniZinc\modeles\modele_entraine_GNN.pt"
+#gnn_path = 
 
-training_folder = r"C:\Users\mathi\OneDrive\Documents\articlesIFT7020\projetRechercheIFT7020MiniZinc\fichiers_benchs_20color"
+#training_folder =
 
 nb_colors = 50
 lambda_eff = 0.008
@@ -485,10 +485,7 @@ def solve_with_min_colors(
         valid, conflicts = is_valid_coloring(best_valid_colors, edges)
 
         base_name = os.path.splitext(os.path.basename(dzn_path))[0]
-        out_file = (
-            f"C://Users//mathi//OneDrive//Documents//articlesIFT7020//"
-            f"projetRechercheIFT7020MiniZinc//solver_warm_{base_name}.mzn"
-        )
+        #out_file =
 
         elapsed = time.perf_counter() - start_time
         print("Confidence per node:", best_valid_conf)
@@ -498,10 +495,7 @@ def solve_with_min_colors(
         canonical_colors = canonicalize_colors(best_overall_colors)
         valid, conflicts = is_valid_coloring(canonical_colors, edges)
 
-        out_file = (
-            f"C://Users//mathi//OneDrive//Documents//articlesIFT7020//"
-            f"projetRechercheIFT7020MiniZinc//solver{(best_overall_c, len(edges))}.mzn"
-        )
+        #out_file =
 
         elapsed = time.perf_counter() - start_time
         print(conflicts)
