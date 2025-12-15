@@ -8,12 +8,12 @@ from torch.linalg import solve
 import readDZN
 import time
 
-
-#modelpath = 
-
-#gnn_path = 
-
-#training_folder =
+# !!!
+# To use this file,
+# Fill in these 3
+modelpath = ""
+gnn_path = ""
+training_folder = "training"
 
 nb_colors = 50
 
