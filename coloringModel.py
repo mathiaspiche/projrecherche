@@ -8,19 +8,27 @@ from torch.linalg import solve
 import readDZN
 import time
 
-
-#modelpath = 
-
-#gnn_path = 
-
-#training_folder =
+# !!!
+# To use this file,
+# Fill in these 3
+modelpath = ""
+gnn_path = ""
+training_folder = "training"
 
 nb_colors = 50
+
 lambda_eff = 0.008
 noise_scale = 0.001
+
+
 def is_valid_coloring(colors, edges):
+    """
+    Valid que le coloring est valid
+        (pas de paire de meme couleur)
+    """
     colors = colors.detach().cpu()
 
+    # Liste des paires de sommets ayant un conflit (meme couleur)
     conflicts = [((u, v), (colors[u], colors[v])) for (u, v) in edges if colors[u] == colors[v]]
     valid = (len(conflicts) == 0)
 
@@ -105,6 +113,8 @@ def inject_high_confidence_constraints(
 
     print(f"✅ Injected {injected} (<=) constraints into {output_path}")
     return output_path
+
+# Class wrapping a GNN solver
 class RUNCGNN(nn.Module):
     def __init__(self, k=128, nb_colors=nb_colors):
         super().__init__()
@@ -132,12 +142,13 @@ class RUNCGNN(nn.Module):
 
         self.W = nn.Parameter(torch.randn(nb_colors, k) * 0.1)
 
+    # Logic deciding how to process a new step
     def forward(self, N, edges, max_steps, noise_scale=noise_scale, return_all=False):
         device = self.W.device
 
         if edges:
-            u_idx = torch.tensor([u for (u, v) in edges], device=device)
-            v_idx = torch.tensor([v for (u, v) in edges], device=device)
+            u_idx = torch.tensor([u for (u, _) in edges], device=device)
+            v_idx = torch.tensor([v for (_, v) in edges], device=device)
 
             deg = torch.zeros(N, device=device)
             deg.index_add_(0, u_idx, torch.ones_like(u_idx, dtype=torch.float))
@@ -158,7 +169,7 @@ class RUNCGNN(nn.Module):
 
         phis = []
 
-        for t in range(max_steps):
+        for _ in range(max_steps):
             msg_sum = torch.zeros(N, self.k, device=device)
 
             if u_idx.numel() > 0:
@@ -192,9 +203,7 @@ class RUNCGNN(nn.Module):
             return logits
 
 def coloring_loss(phi, edges, lambda_eff=lambda_eff, eps=1e-12):
-
     device = phi.device
-    N, C = phi.shape
 
     if edges:
         u = torch.tensor([a for (a, b) in edges], device=device)
@@ -223,6 +232,7 @@ def curriculum_filter(graphs, epoch):
     return [(N, edges, name) for (N, edges, name) in graphs if N <= maxN]
 """
 
+# Load training graph from DZN files
 def load_training_graphs(folder):
     graphs = []
     for f in os.listdir(folder):
@@ -282,10 +292,9 @@ def train_model(
 
     else:
         print("🆕 Starting fresh training (no checkpoint loaded)")
+
     for epoch in range(1, epochs + 1):
-
         gnn.init_state.data += 0.0005 * torch.randn_like(gnn.init_state.data)
-
 
         random.shuffle(graphs)
 
@@ -303,9 +312,9 @@ def train_model(
             batch_csp = []
             batch_eff = []
 
-            for (N, edges, name) in graphs_batch:
+            for (N, edges, _) in graphs_batch:
 
-                logits, phis = gnn.forward(
+                _, phis = gnn.forward(
                     N, edges,
                     32,
                     noise_scale=noise_scale,
@@ -353,6 +362,7 @@ def train_model(
         )
         torch.save(gnn.state_dict(), gnn_path)
 
+# Loads preexisting ai model
 def load_pretrained_model(nb_colors_model=nb_colors, device=None):
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -379,8 +389,11 @@ def load_pretrained_model(nb_colors_model=nb_colors, device=None):
     return gnn, device
 
 def canonicalize_colors(colors: torch.Tensor) -> torch.Tensor:
-    unique_vals, inverse = torch.unique(colors, sorted=True, return_inverse=True)
+    _, inverse = torch.unique(colors, sorted=True, return_inverse=True)
     return inverse
+
+solver_folder = "C://Users//mathi//OneDrive//Documents//articlesIFT7020"
+
 def solve_with_min_colors(
         dzn_path,
         nb_colors_model=nb_colors,
@@ -485,7 +498,9 @@ def solve_with_min_colors(
         valid, conflicts = is_valid_coloring(best_valid_colors, edges)
 
         base_name = os.path.splitext(os.path.basename(dzn_path))[0]
-        #out_file =
+        out_file = (
+            f"{solver_folder}//projetRechercheIFT7020MiniZinc//solver_warm_{base_name}.mzn"
+        )
 
         elapsed = time.perf_counter() - start_time
         print("Confidence per node:", best_valid_conf)
@@ -495,7 +510,9 @@ def solve_with_min_colors(
         canonical_colors = canonicalize_colors(best_overall_colors)
         valid, conflicts = is_valid_coloring(canonical_colors, edges)
 
-        #out_file =
+        out_file = (
+            f"{solver_folder}//projetRechercheIFT7020MiniZinc//solver{(best_overall_c, len(edges))}.mzn"
+        )
 
         elapsed = time.perf_counter() - start_time
         print(conflicts)
@@ -504,6 +521,7 @@ def solve_with_min_colors(
     print("No best_overall_colors stored; returning None.")
     elapsed = time.perf_counter() - start_time
     return None, None, None, elapsed
+
 def extract_conflict_nodes(conflicts):
     conflict_nodes = set()
     for item in conflicts:
@@ -515,6 +533,7 @@ def extract_conflict_nodes(conflicts):
             conflict_nodes.add(int(u))
             conflict_nodes.add(int(v))
     return conflict_nodes
+
 def getNewConstraints(colors, conflicts, max_fraction=0.05):
 
     norm_conflicts = []
@@ -614,4 +633,3 @@ def writeConstraints(
             f.write(c + "\n")
 
     return out_path, constraints
-

@@ -4,10 +4,12 @@ import math
 import networkx as nx
 
 
-
-#OUT_FOLDER =
+OUT_FOLDER = "./output"
 
 def save_graph_as_dzn(G: nx.Graph, path: str) -> None:
+    """
+    Sauvegarde le graph sous format .dzn
+    """
     G = nx.convert_node_labels_to_integers(G, ordering="sorted")
 
     edges = list(G.edges())
@@ -34,6 +36,12 @@ def save_graph_as_dzn(G: nx.Graph, path: str) -> None:
 
 
 def gen_n_colorable_graph(n: int, num_colors: int, variant: str | None = None) -> nx.Graph:
+    """
+    Generer un graph avec
+        n noeuds
+        num_colors de couleurs
+        variant
+    """
 
     if num_colors < 1:
         raise ValueError("num_colors must be >= 1")
@@ -46,12 +54,17 @@ def gen_n_colorable_graph(n: int, num_colors: int, variant: str | None = None) -
     G = nx.Graph()
     G.add_nodes_from(range(n))
 
+    # Distribute nodes evenly among colors
+    # [size_color_1, size_color_2, size_color_3, ...]
     base = n // num_colors
     sizes = [base] * num_colors
     leftover = n - base * num_colors
+
     for i in range(leftover):
         sizes[i % num_colors] += 1
 
+    # List containing each range of nodes based on color
+    # [list_color1(nodes), list_color2(nodes), ...]
     groups: list[list[int]] = []
     current = 0
     for c in range(num_colors):
@@ -62,12 +75,15 @@ def gen_n_colorable_graph(n: int, num_colors: int, variant: str | None = None) -
     for g in groups:
         random.shuffle(g)
 
+    # Generate edges between nodes
     def add_between_groups(g1, g2, p):
         for u in g1:
             for v in g2:
                 if random.random() < p:
                     G.add_edge(u, v)
 
+    # Choose mixing type
+    # (how each node of 1 color is associated to another node of 1 color)
     if variant == "basic":
         p = random.uniform(0.05, 0.35)
         for c1 in range(num_colors):
@@ -122,6 +138,8 @@ def gen_n_colorable_graph(n: int, num_colors: int, variant: str | None = None) -
     else:
         raise ValueError(f"Unknown variant: {variant}")
 
+    # Makes sure there is no graph without edges
+    # if there is supposed to be 2 or more nodes
     if G.number_of_edges() == 0 and n >= 2:
         if num_colors >= 2:
             g1, g2 = groups[0], groups[1]
@@ -138,6 +156,10 @@ def generate_dataset_n_colorable(
     num_colors: int = 4,
     seed: int = 1234,
 ) -> None:
+
+    # Il faut assez de 
+    # nodes pour etre plus ou equal
+    # au nombre de couleurs
     if min_nodes < num_colors:
         raise ValueError(
             f"min_nodes ({min_nodes}) must be >= num_colors ({num_colors})"
@@ -153,23 +175,23 @@ def generate_dataset_n_colorable(
 
     variants = ["basic", "sbm", "chain", "geometric", "rewired"]
 
-    for i in range(num_graphs):
-        n = random.randint(min_nodes, max_nodes)
+    for graph_nb in range(num_graphs):
+        node_qty = random.randint(min_nodes, max_nodes)
         variant = random.choice(variants)
 
         try:
-            G = gen_n_colorable_graph(n, num_colors, variant=variant)
+            G = gen_n_colorable_graph(node_qty, num_colors, variant=variant)
         except Exception as e:
-            print(f"⚠️ Failed to generate graph {i} (n={n}, var={variant}): {e}")
+            print(f"⚠️ Failed to generate graph {graph_nb} (n={node_qty}, var={variant}): {e}")
             continue
 
-        filename = f"ncolor{num_colors}_var{variant}_n{n}_{i}.dzn"
+        filename = f"ncolor{num_colors}_var{variant}_n{node_qty}_{graph_nb}.dzn"
         path = os.path.join(out_folder, filename)
 
         save_graph_as_dzn(G, path)
 
-        if i % 100 == 0:
-            print(f"  {i}/{num_graphs} done… (last n={n}, var={variant})")
+        if graph_nb % 100 == 0:
+            print(f"  {graph_nb}/{num_graphs} done… (last n={node_qty}, var={variant})")
 
     print("✅ Generation complete.")
 

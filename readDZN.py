@@ -7,8 +7,8 @@ import glob
 
 from torch_geometric.graphgym import train
 
-#modelpath =
-#filepath = 
+modelpath = ""
+# filepath =
 #training_folder =
 #val_folder = 
 #solution_folder = 
